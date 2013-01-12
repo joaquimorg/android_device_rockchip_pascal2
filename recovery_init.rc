@@ -1,0 +1,83 @@
+on early-init
+	insmod /rk29xxnand_ko.ko.3.0.8+
+    start ueventd
+
+on init
+    export PATH /sbin
+    export ANDROID_ROOT /system
+    export ANDROID_DATA /data
+    export EXTERNAL_STORAGE /sdcard
+
+    symlink /system/etc /etc
+
+    mkdir /boot
+    mkdir /sdcard
+    mkdir /sd-ext
+    mkdir /datadata
+    mkdir /emmc
+    mkdir /system
+    mkdir /data
+    mkdir /cache
+    mkdir /kernel
+    mount tmpfs tmpfs /tmp
+    #mount vfat /dev/block/mtdblock10 /emmc
+    #mount ext3 /dev/block/mtdblock6 /cache
+    #mount ext3 /dev/block/mtdblock7 /data
+    #mount ext3 /dev/block/mtdblock9 /system
+	
+    write /sys/devices/virtual/bdi/179:0/read_ahead_kb 2048
+    write /sys/devices/virtual/bdi/7:0/read_ahead_kb 2048
+    write /sys/devices/virtual/bdi/93:0/read_ahead_kb 2048
+
+	setprop sys.usb.config adb
+
+on boot
+
+    ifup lo
+    hostname localhost
+    domainname localdomain
+
+    class_start default
+
+service ueventd /sbin/ueventd
+    critical
+
+service erase_misc /sbin/sh -c "busybox dd if=/misc.img of=/dev/block/mtdblock1; sync"
+    oneshot
+
+service recovery /sbin/recovery
+
+service adbd /sbin/adbd recovery
+    disabled
+
+# adb only USB configuration
+# This should only be used during device bringup
+# and as a fallback if the USB manager fails to set a standard configuration
+on property:sys.usb.config=adb
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 2207
+    write /sys/class/android_usb/android0/idProduct 0006
+    write /sys/class/android_usb/android0/functions $sys.usb.config
+    write /sys/class/android_usb/android0/enable 1
+    start adbd
+    setprop sys.usb.state $sys.usb.config
+	
+# Always start adbd on userdebug and eng builds
+# In recovery, always run adbd as root.
+on property:ro.debuggable=1
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 2207
+    write /sys/class/android_usb/android0/idProduct 0000
+    write /sys/class/android_usb/android0/functions mass_storage,adb
+    write /sys/class/android_usb/android0/enable 1
+    write /sys/class/android_usb/android0/iManufacturer $ro.product.manufacturer
+    write /sys/class/android_usb/android0/iProduct $ro.product.model
+    write /sys/class/android_usb/android0/iSerial $ro.serialno
+    start adbd
+    setprop service.adb.root 1
+
+# Restart adbd so it can run as root
+on property:service.adb.root=1
+    write /sys/class/android_usb/android0/enable 0
+    restart adbd
+    write /sys/class/android_usb/android0/enable 1

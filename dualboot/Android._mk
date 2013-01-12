@@ -1,0 +1,66 @@
+# Copyright 2011 The Android Open Source Project
+
+ifneq ($(BUILD_TINY_ANDROID),true)
+
+LOCAL_PATH := $(call my-dir)
+
+dualboot_local_path := $(LOCAL_PATH)
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES := \
+	dualboot.c
+
+LOCAL_MODULE := dualboot_ui
+LOCAL_MODULE_TAGS := optional
+LOCAL_FORCE_STATIC_EXECUTABLE := true
+LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT)
+LOCAL_UNSTRIPPED_PATH := $(TARGET_ROOT_OUT_UNSTRIPPED)
+
+LOCAL_C_INCLUDES := bootable/recovery
+
+LOCAL_STATIC_LIBRARIES := libdbminui libpixelflinger_static libpng libbusybox libcrecovery
+LOCAL_STATIC_LIBRARIES += libz libstdc++ libcutils libm libc 
+
+include $(BUILD_EXECUTABLE)
+
+define _add-dualboot-image
+include $$(CLEAR_VARS)
+LOCAL_MODULE := system_core_dualboot_$(notdir $(1))
+LOCAL_MODULE_STEM := $(notdir $(1))
+_img_modules += $$(LOCAL_MODULE)
+LOCAL_SRC_FILES := $1
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS := ETC
+LOCAL_MODULE_PATH := $$(TARGET_ROOT_OUT)/res/images
+include $$(BUILD_PREBUILT)
+endef
+
+_img_modules :=
+_images :=
+$(foreach _img, $(call find-subdir-subdir-files, "images", "*.png"), \
+  $(eval $(call _add-dualboot-image,$(_img))))
+
+  
+include $(CLEAR_VARS)
+LOCAL_MODULE := dualboot_res_images
+LOCAL_MODULE_TAGS := optional
+LOCAL_REQUIRED_MODULES := $(_img_modules)
+include $(BUILD_PHONY_PACKAGE)
+
+_add-charger-image :=
+_img_modules :=
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := init
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS := RECOVERY_EXECUTABLES
+LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT)
+LOCAL_SRC_FILES := init
+include $(BUILD_PREBUILT)
+
+include $(dualboot_local_path)/minui/Android.mk
+
+dualboot_local_path :=
+
+endif

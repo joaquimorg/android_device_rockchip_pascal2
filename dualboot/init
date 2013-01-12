@@ -1,0 +1,77 @@
+#!/sbin/busybox sh
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+/sbin/busybox mount -t devtmpfs none /dev
+
+/dualboot_ui
+
+option=$?
+
+if [ $option == 1 ]; then	
+	/sbin/busybox umount /dev
+	./init-android
+	exit 0
+fi
+
+if [ $option == 2 ]; then
+
+	/sbin/busybox ln -s /sbin/busybox /sbin/ln
+	ln -s /sbin/busybox /sbin/ls
+	ln -s /sbin/busybox /sbin/mount
+	ln -s /sbin/busybox /sbin/chroot
+	ln -s /sbin/busybox /sbin/umount
+	ln -s /sbin/busybox /sbin/dmesg
+	ln -s /sbin/busybox /sbin/grep
+	ln -s /sbin/busybox /sbin/reset
+	ln -s /sbin/busybox /sbin/mkdir
+	ln -s /sbin/busybox /sbin/ps
+	ln -s /sbin/busybox /sbin/kill
+	ln -s /sbin/busybox /sbin/insmod
+	ln -s /sbin/busybox /sbin/sh
+	ln -s /sbin/busybox /sbin/setconsole
+	
+	mount -t devtmpfs none /dev
+	mkdir /dev/pts
+	mount -t devpts devpts /dev/pts
+	insmod /rk29xxnand_ko.ko.3.0.8+
+
+	mount -t proc proc /proc/
+	mount -t sysfs sys /sys/
+
+	mount /dev/mmcblk0 /system
+	mount -o bind /dev /system/dev
+	mkdir /system/dev/pts
+	mount -t devpts devpts /system/dev/pts
+
+	echo 0 > /proc/sys/kernel/hung_task_timeout_secs
+	
+	setconsole /dev/tty0
+	
+	reset
+
+	echo
+	echo "2013 - joaquim.org"
+	echo "Android custom Boot..."
+	echo
+
+	## ADB
+
+	echo PASCAL2 > /sys/class/android_usb/android0/iSerial
+	echo RockChip > /sys/class/android_usb/android0/f_rndis/manufacturer 
+	echo 2207 > /sys/class/android_usb/android0/f_rndis/vendorID 
+	echo 1 > /sys/class/android_usb/android0/f_rndis/wceis
+		
+	echo Mundo Reader > /sys/class/android_usb/android0/iManufacturer
+	echo BQ Pascal 2 > /sys/class/android_usb/android0/iProduct
+
+	echo 0 > /sys/class/android_usb/android0/enable
+	echo 2207 > /sys/class/android_usb/android0/idVendor
+	echo 0000 > /sys/class/android_usb/android0/idProduct 
+	echo mass_storage,adb > /sys/class/android_usb/android0/functions
+	echo 1 > /sys/class/android_usb/android0/enable
+	adbd device &
+
+	# shell
+	sh
+fi

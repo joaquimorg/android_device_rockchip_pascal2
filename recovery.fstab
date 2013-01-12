@@ -1,0 +1,10 @@
+# mount point		fstype		device			[device2]
+/boot		emmc		/dev/block/mtdblock3
+/cache		ext4		/dev/block/mtdblock6
+/data		ext4		/dev/block/mtdblock7
+#/emmc		vfat		/dev/block/mtdblock10
+/kernel		emmc		/dev/block/mtdblock2
+/recovery	emmc		/dev/block/mtdblock4
+/sd-ext		vfat		/dev/block/mmcblk0p1	/dev/block/mmcblk0
+/sdcard		vfat		/dev/block/mtdblock10
+/system		ext4		/dev/block/mtdblock9

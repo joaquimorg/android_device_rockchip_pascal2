@@ -1,0 +1,25 @@
+#!/sbin/busybox sh
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+/sbin/busybox mount -t devtmpfs none /dev
+
+/dualboot_ui
+
+option=$?
+
+if [ $option == 1 ]; then
+  echo "Android"
+  ./init-android
+fi
+
+if [ $option == 2 ]; then
+  echo "SDCard"
+#  /sbin/busybox insmod /rk29xxnand_ko.ko.3.0.8+
+#  /sbin/busybox mount /dev/mmcblk0 /system
+#  /sbin/busybox mount -o bind /dev /system/dev
+#  /sbin/busybox chroot /system/ /init
+fi
+
+# shell if no boot
+#/sbin/busybox sh
